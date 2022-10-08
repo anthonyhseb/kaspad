@@ -81,8 +81,9 @@ func (m *Manager) handleIncomingMessages(router *router.Router, incomingRoute *r
 		}
 		handler, ok := handlers[request.Command()]
 		if !ok {
-			return err
+			log.Warnf("received unsupported RPC command %s", request.Command())
 		}
+		log.Infof("received RPC command %s", request.Command())
 		response, err := handler(m.context, router, request)
 		if err != nil {
 			return err
