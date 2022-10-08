@@ -97,7 +97,11 @@ func (c *gRPCConnection) receiveLoop() error {
 		message.SetMessageNumber(messageNumber)
 		message.SetReceivedAt(time.Now())
 
-		log.Infof("incoming '%s' message from %s (message number %d)", message.Command(), c,
+		level := logger.LevelDebug
+		if "RPC" == c.server.name {
+			level = logger.LevelInfo
+		}
+		log.Writef(level, "incoming '%s' message from %s (message number %d)", message.Command(), c,
 			message.MessageNumber())
 
 		log.Tracef("incoming '%s' message from %s  (message number %d): %s", message.Command(),
