@@ -21,7 +21,6 @@ type consensus struct {
 
 	genesisBlock *externalapi.DomainBlock
 	genesisHash  *externalapi.DomainHash
-	hfDAAScore   uint64
 
 	expectedDAAWindowDurationInMilliseconds int64
 
@@ -854,12 +853,16 @@ func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalap
 }
 
 func (s *consensus) validateBlockHashExists(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	exists, err := s.blockStatusStore.Exists(s.databaseContext, stagingArea, blockHash)
+	status, err := s.blockStatusStore.Get(s.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		return errors.Errorf("block %s does not exist", blockHash)
+	}
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return errors.Errorf("block %s does not exist", blockHash)
+
+	if status == externalapi.StatusInvalid {
+		return errors.Errorf("block %s is invalid", blockHash)
 	}
 	return nil
 }
@@ -918,7 +921,7 @@ func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.Domain
 }
 
 func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
-	s.transactionValidator.PopulateMass(transaction, s.hfDAAScore)
+	s.transactionValidator.PopulateMass(transaction)
 }
 
 func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) error {
